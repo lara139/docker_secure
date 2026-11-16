@@ -1,27 +1,52 @@
-# Utiliser une image de base Node.js légère (tag LTS valide)
-FROM node:20-alpine
 
-# Définir le répertoire de travail de l'application
+#BUILD
+FROM alpine:3.24 AS build
+
+# Installer Node.js et npm
+RUN apk add --no-cache nodejs npm
+
+# Définir le répertoire de travail
 WORKDIR /app
 
-# Copier package.json et package-lock.json pour installer les dépendances (cache Docker)
+# Copier les fichiers nécessaires à l'installation
 COPY package.json package-lock.json ./
 
-# Copier les fichiers sources de l'application dans le conteneur
-COPY index.html ./
-COPY main.js ./
-COPY style.css ./
-COPY questions_defaut.js ./
-COPY javascript.svg ./
-COPY vite.config.js ./
-COPY images ./images
-COPY public ./public
+# Installer les dépendances
+RUN npm ci
 
-# Construire l'application (sortie dans /app/dist) et nettoyer les modules Node.js
-RUN npm install && npm install -g serve && npm run build && rm -rf node_modules
+# Copier les sources de l'application
+COPY . .
 
-# Exposer le port
+# Construire l'application
+RUN npm run build
+
+
+#PRODUCTION
+FROM alpine:3.24 AS production
+
+# Installer Node.js et npm
+RUN apk add --no-cache nodejs npm
+
+# Définir le répertoire de travail
+WORKDIR /app
+
+# Installer le serveur web
+RUN npm install -g serve
+
+# Créer un groupe et un utilisateur non privilégié
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# Copier uniquement les fichiers compilés et attribuer leur propriété au nouvel utilisateur
+COPY --from=build --chown=appuser:appgroup /app/dist ./dist
+
+# Définir l'utilisateur d'exécution
+USER appuser
+
+# Définir l'environnement de production
+ENV NODE_ENV=production
+
+# Exposer le port de l'application
 EXPOSE 3000
 
-# Démarrer l'application (vite build génère "dist", pas "build")
+# Démarrer l'application
 CMD ["serve", "-s", "dist", "-l", "3000"]
