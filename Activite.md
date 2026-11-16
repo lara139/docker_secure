@@ -164,7 +164,14 @@ Le Dockerfile sécurisé a été réalisé avec un build multi-stage. Il utilise
 
 ## 2. Fichier .dockerignore
 
-À compléter avec le contenu du fichier `.dockerignore`.
+Le fichier `.dockerignore` permet d'exclure du contexte de construction les fichiers et dossiers qui ne sont pas nécessaires à la création de l'image.
+
+Les éléments exclus sont :
+
+- `node_modules` : les dépendances déjà installées localement.
+- `dist` : les fichiers compilés, qui seront générés pendant le build.
+- `.git` : les fichiers liés au dépôt Git.
+- `.env` et `.env.*` : les fichiers pouvant contenir des informations sensibles.
 
 ## 3. Construction et lancement du conteneur sécurisé
 
@@ -241,19 +248,21 @@ Dépôt Docker Hub : https://hub.docker.com/r/laras139/quiz-docker
 
 | Critère | Image initiale | Image sécurisée |
 |---|---|---|
-| Taille de l'image | 58,2 Mo | À compléter |
-| Image de base | Node.js 20 Alpine | À compléter |
-| Utilisateur | root | À compléter |
-| Outils de développement | À compléter | À compléter |
-| Fichier `.dockerignore` | À compléter | À compléter |
-| Build multi-stage | Non | À compléter |
-| Limitation des ressources | Non | À compléter |
-| Restrictions des privilèges | Non | À compléter |
-| Accès au socket Docker | À vérifier | À vérifier |
-| CVE critiques | 5 | À compléter |
-| CVE élevées | 39 | À compléter |
-| CVE moyennes | 20 | À compléter |
-| CVE faibles | 5 | À compléter |
+| Taille de l'image | 58,2 Mo | Environ 35 Mo |
+| Image de base | Node.js 20 Alpine | Alpine 3.24 |
+| Utilisateur | root | appuser (non-root) |
+| Outils de développement | Présents dans les couches de construction de l'image | Séparés dans l'étape de build et absents de l'image finale |
+| Fichier `.dockerignore` | Absent | Présent |
+| Build multi-stage | Non | Oui |
+| Limitation des ressources | Non | Oui : mémoire limitée à 256 Mo et CPU à 0,5 |
+| Restrictions des privilèges | Non | Oui : `--cap-drop=ALL` et `no-new-privileges` |
+| Accès au socket Docker | Non monté | Non monté |
+| CVE critiques | 5 | 2 |
+| CVE élevées | 39 | 13 |
+| CVE moyennes | 20 | 17 |
+| CVE faibles | 5 | 1 |
+| CVE non spécifiées | Non indiqué | 5 |
+| **Total des vulnérabilités** | **69** | **38** |
 
 ## 2. Questions d'analyse
 
@@ -290,6 +299,10 @@ Non, l'image ne peut pas être considérée comme totalement sécurisée. Les mo
 - Intégrer des tests de sécurité dans la pipeline CI/CD avant chaque déploiement.
 - Tester les nouvelles versions de l'image avant leur mise en production.
 
+### Synthèse
+
+La sécurisation de l'image a permis de réduire sa taille d'environ 40 % et de diminuer le nombre de vulnérabilités détectées par Docker Scout de 69 à 38, soit une baisse d'environ 45 %. L'utilisation d'un utilisateur non privilégié, du build multi-stage et des restrictions appliquées à l'exécution renforcent également la sécurité du conteneur. Toutefois, les vulnérabilités restantes montrent que des mises à jour et des contrôles réguliers restent nécessaires.
+
 # Mission 4 : Utiliser Docker Hardened Image
 
 Réaliser l'atelier pratique : [Migration d'une application Node vers des images Docker renforcées](https://docs.docker.com/guides/lab-dhi-node/).
@@ -300,7 +313,18 @@ Comparer son contenu, ses propriétés de sécurité et ses vulnérabilités ave
 
 ## Comparaison des images
 
-À compléter après réalisation de l'atelier.
+À compléter après réalisation de l'atelier Docker Hardened Images (DHI).
+
+| Critère | Image sécurisée actuelle | Docker Hardened Image |
+|---|---|---|
+| Image de base | Alpine 3.24 | À relever |
+| Taille de l'image | Environ 35 Mo | À relever |
+| Utilisateur par défaut | appuser | À relever |
+| Composants présents | Node.js, npm et serve | À relever |
+| Vulnérabilités critiques | 2 | À relever |
+| Vulnérabilités élevées | 13 | À relever |
+| Vulnérabilités moyennes | 17 | À relever |
+| Vulnérabilités faibles | 1 | À relever |
 
 # Livrables attendus
 
