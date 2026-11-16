@@ -1,0 +1,5 @@
+﻿services:
+  workspace:
+    ports: !override
+      - "3031:3030"
+      - "3001:3000"

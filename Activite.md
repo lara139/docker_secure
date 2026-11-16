@@ -164,14 +164,14 @@ Le Dockerfile sécurisé a été réalisé avec un build multi-stage. Il utilise
 
 ## 2. Fichier .dockerignore
 
-Le fichier `.dockerignore` permet d'exclure du contexte de construction les fichiers et dossiers qui ne sont pas nécessaires à la création de l'image.
+Le fichier `.dockerignore` permet d'exclure les fichiers inutiles ou sensibles du contexte de construction Docker.
 
 Les éléments exclus sont :
 
-- `node_modules` : les dépendances déjà installées localement.
-- `dist` : les fichiers compilés, qui seront générés pendant le build.
-- `.git` : les fichiers liés au dépôt Git.
-- `.env` et `.env.*` : les fichiers pouvant contenir des informations sensibles.
+- `node_modules` : dépendances locales qui seront réinstallées pendant le build.
+- `dist` : fichiers compilés qui seront générés pendant le build.
+- `.git` : métadonnées du dépôt Git.
+- `.env` et `.env.*` : fichiers pouvant contenir des informations sensibles.
 
 ## 3. Construction et lancement du conteneur sécurisé
 
@@ -242,19 +242,17 @@ docker push laras139/quiz-docker:secure
 
 Dépôt Docker Hub : https://hub.docker.com/r/laras139/quiz-docker
 
-- Compléter un tableau comparatif de l'image initiale et de l'image sécurisée.
-
 ## 1. Tableau comparatif
 
 | Critère | Image initiale | Image sécurisée |
 |---|---|---|
-| Taille de l'image | 58,2 Mo | Environ 35 Mo |
+| Taille de l'image | 58,2 Mo | 35,6 Mo |
 | Image de base | Node.js 20 Alpine | Alpine 3.24 |
 | Utilisateur | root | appuser (non-root) |
-| Outils de développement | Présents dans les couches de construction de l'image | Séparés dans l'étape de build et absents de l'image finale |
+| Outils de développement | Présents dans l'image initiale | Séparés dans l'étape de build et absents de l'image finale |
 | Fichier `.dockerignore` | Absent | Présent |
 | Build multi-stage | Non | Oui |
-| Limitation des ressources | Non | Oui : mémoire limitée à 256 Mo et CPU à 0,5 |
+| Limitation des ressources | Non | Oui : 256 Mo de mémoire et 0,5 CPU |
 | Restrictions des privilèges | Non | Oui : `--cap-drop=ALL` et `no-new-privileges` |
 | Accès au socket Docker | Non monté | Non monté |
 | CVE critiques | 5 | 2 |
@@ -272,7 +270,7 @@ Les améliorations les plus significatives concernent la mise en place d'un buil
 
 ### La taille de l'image a-t-elle diminué ? Pourquoi ?
 
-Oui, la taille de l'image est passée de 58,2 Mo à environ 35 Mo. Cette réduction est principalement due à l'utilisation d'un build multi-stage. La compilation est réalisée dans une première étape, puis seuls les fichiers compilés du dossier `dist` sont copiés dans l'image finale. Les fichiers sources et les dépendances de compilation ne sont donc pas conservés dans l'image de production.
+Oui, la taille de l'image est passée de 58,2 Mo à 35,6 Mo. Cette réduction est principalement due à l'utilisation d'un build multi-stage. La compilation est réalisée dans une première étape, puis seuls les fichiers compilés du dossier `dist` sont copiés dans l'image finale. Les fichiers sources et les dépendances de compilation ne sont donc pas conservés dans l'image de production.
 
 ### Quelles recommandations concernent le Dockerfile et lesquelles concernent l'exécution du conteneur ?
 
@@ -299,9 +297,9 @@ Non, l'image ne peut pas être considérée comme totalement sécurisée. Les mo
 - Intégrer des tests de sécurité dans la pipeline CI/CD avant chaque déploiement.
 - Tester les nouvelles versions de l'image avant leur mise en production.
 
-### Synthèse
+### Synthèse des améliorations
 
-La sécurisation de l'image a permis de réduire sa taille d'environ 40 % et de diminuer le nombre de vulnérabilités détectées par Docker Scout de 69 à 38, soit une baisse d'environ 45 %. L'utilisation d'un utilisateur non privilégié, du build multi-stage et des restrictions appliquées à l'exécution renforcent également la sécurité du conteneur. Toutefois, les vulnérabilités restantes montrent que des mises à jour et des contrôles réguliers restent nécessaires.
+La sécurisation de l'image a permis de réduire sa taille de 58,2 Mo à 35,6 Mo. Le nombre de vulnérabilités détectées par Docker Scout est également passé de 69 à 38. L'utilisation d'un utilisateur non privilégié, du build multi-stage et des restrictions appliquées à l'exécution renforce la sécurité du conteneur. Cependant, des vulnérabilités persistent et nécessitent des mises à jour et des contrôles réguliers.
 
 # Mission 4 : Utiliser Docker Hardened Image
 
@@ -311,20 +309,58 @@ L'objectif est d'étudier la possibilité d'utiliser une Docker Hardened Image (
 
 Comparer son contenu, ses propriétés de sécurité et ses vulnérabilités avec l'image actuellement sécurisée.
 
-## Comparaison des images
+## 1. Comparaison des images
 
-À compléter après réalisation de l'atelier Docker Hardened Images (DHI).
+L'objectif de cette mission était d'étudier la possibilité d'utiliser une Docker Hardened Image (DHI) pour un environnement de production, en la comparant à l'image Docker précédemment sécurisée.
 
-| Critère | Image sécurisée actuelle | Docker Hardened Image |
+Deux images ont été analysées :
+
+- **Image sécurisée actuelle :** `quiz-docker:secure`
+- **Image Docker Hardened :** `demo-node-dhi:v1`, basée sur `dhi.io/node:24`
+
+| Critère | Image sécurisée actuelle | Image DHI |
 |---|---|---|
-| Image de base | Alpine 3.24 | À relever |
-| Taille de l'image | Environ 35 Mo | À relever |
-| Utilisateur par défaut | appuser | À relever |
-| Composants présents | Node.js, npm et serve | À relever |
-| Vulnérabilités critiques | 2 | À relever |
-| Vulnérabilités élevées | 13 | À relever |
-| Vulnérabilités moyennes | 17 | À relever |
-| Vulnérabilités faibles | 1 | À relever |
+| Image de base | Node.js / Alpine 3.24 | Docker Hardened Image Node.js 24 |
+| Build multi-stage | Oui | Oui |
+| Utilisateur non-root | Oui (`appuser`) | Oui (`1000`) |
+| Taille | 36 MB | 43 MB |
+| Nombre de packages | 252 | 86 |
+| Packages vulnérables | 15 | 5 |
+| Vulnérabilités totales | 38 | 20 |
+| Critiques | 2 | 1 |
+| Élevées | 13 | 1 |
+| Moyennes | 17 | 4 |
+| Faibles | 1 | 9 |
+| Non classifiées | 5 | 5 |
+
+## 2. Analyse du contenu et des propriétés de sécurité
+
+L'image DHI contient 86 packages contre 252 pour l'image sécurisée actuelle. Elle embarque donc beaucoup moins de composants, ce qui réduit sa surface d'attaque.
+
+Les deux images utilisent un build multi-stage et un utilisateur non-root, ce qui permet de limiter les risques liés à l'exécution du conteneur.
+
+La DHI présente également une meilleure maîtrise de son environnement d'exécution : elle est conçue pour être minimale et ne contient pas certains outils habituels, comme `/bin/sh`. L'installation des dépendances doit donc être réalisée dans une étape de construction distincte, avant de les copier dans l'image finale.
+
+## 3. Analyse des vulnérabilités
+
+Le scan Docker Scout montre une diminution importante des vulnérabilités avec l'image DHI :
+
+- Le nombre total de vulnérabilités passe de 38 à 20, soit une diminution d'environ 47 %.
+- Les vulnérabilités critiques passent de 2 à 1.
+- Les vulnérabilités élevées passent de 13 à 1.
+- Le nombre de packages vulnérables passe de 15 à 5.
+
+Il reste néanmoins des vulnérabilités à traiter. L'image DHI présente notamment une vulnérabilité critique sur `proxy-addr 2.0.7`, ainsi que des vulnérabilités sur `body-parser` et `qs`.
+
+L'utilisation d'une DHI ne supprime donc pas la nécessité de mettre à jour régulièrement les dépendances applicatives et de réaliser des scans de sécurité.
+
+## 4. Conclusion
+
+La Docker Hardened Image constitue une solution intéressante pour un environnement de production. Malgré une taille légèrement supérieure à celle de notre image sécurisée actuelle (43 MB contre 36 MB), elle contient beaucoup moins de packages et présente nettement moins de vulnérabilités.
+
+Elle permet ainsi de réduire la surface d'attaque et d'améliorer la sécurité de l'image. Son utilisation implique cependant quelques adaptations, notamment l'utilisation d'un build multi-stage pour installer les dépendances.
+
+**Je privilégierais donc la Docker Hardened Image pour un environnement de production**, à condition de corriger les vulnérabilités restantes, de maintenir les dépendances à jour et de poursuivre les contrôles de sécurité.
 
 # Livrables attendus
 
